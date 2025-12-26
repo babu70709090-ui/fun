@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Private Cloud Login</title>
+<title>Private Cloud</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
@@ -14,23 +14,19 @@ body {
 }
 
 .container {
-    max-width: 800px;
+    max-width: 900px;
     margin: auto;
     padding: 20px;
-}
-
-h1 {
-    text-align: center;
 }
 
 .box {
     background: #111822;
     padding: 20px;
     border-radius: 8px;
-    box-shadow: 0 0 20px rgba(0,255,204,0.2);
+    margin-bottom: 20px;
 }
 
-input {
+input, button {
     width: 100%;
     padding: 12px;
     margin-top: 10px;
@@ -41,15 +37,10 @@ input {
 }
 
 button {
-    margin-top: 15px;
-    padding: 12px;
-    width: 100%;
     background: #00ffcc;
     color: #000;
-    border: none;
     font-weight: bold;
     cursor: pointer;
-    border-radius: 5px;
 }
 
 button:hover {
@@ -74,66 +65,107 @@ button:hover {
 
 <h1>🔐 PRIVATE CLOUD</h1>
 
-<!-- LOGIN BOX -->
+<!-- LOGIN -->
 <div class="box" id="loginBox">
-    <p>Username</p>
-    <input type="text" id="username">
-
-    <p>Password</p>
-    <input type="password" id="password">
-
+    <input type="text" id="username" placeholder="Username">
+    <input type="password" id="password" placeholder="Password">
     <button onclick="login()">LOGIN</button>
     <p id="msg"></p>
 </div>
 
-<!-- FILE LIST -->
-<div class="box hidden" id="filesBox">
-    <h2>📁 Files</h2>
+<!-- DASHBOARD -->
+<div class="hidden" id="dashboard">
 
-    <div class="file">
-        <span>Linux_ISO.zip</span>
-        <a href="YOUR_LINK_HERE" target="_blank">
-            <button>Download</button>
-        </a>
-    </div>
-
-    <div class="file">
-        <span>Backup_2024.rar</span>
-        <a href="YOUR_LINK_HERE" target="_blank">
-            <button>Download</button>
-        </a>
-    </div>
-
-    <div class="file">
-        <span>Private_Docs.pdf</span>
-        <a href="YOUR_LINK_HERE" target="_blank">
-            <button>Download</button>
-        </a>
-    </div>
+<!-- ADD FILE -->
+<div class="box">
+    <h3>➕ Add File (Link)</h3>
+    <input type="text" id="fileName" placeholder="File name (example.zip)">
+    <input type="text" id="fileLink" placeholder="Paste Drive / TeraBox link">
+    <button onclick="addFile()">ADD FILE</button>
 </div>
 
+<!-- FILE LIST -->
+<div class="box">
+    <h3>📁 Files</h3>
+    <div id="fileList"></div>
+</div>
+
+</div>
 </div>
 
 <script>
-// 👇 ADD / CHANGE USERS HERE
+/* ===== USERS ===== */
 const USERS = [
     { username: "admin", password: "1234" },
     { username: "akbar", password: "pass123" }
 ];
 
+/* ===== LOGIN ===== */
 function login() {
-    const u = document.getElementById("username").value;
-    const p = document.getElementById("password").value;
-    const msg = document.getElementById("msg");
+    const u = username.value;
+    const p = password.value;
+    const ok = USERS.find(x => x.username === u && x.password === p);
 
-    const found = USERS.find(user => user.username === u && user.password === p);
-
-    if (found) {
-        document.getElementById("loginBox").classList.add("hidden");
-        document.getElementById("filesBox").classList.remove("hidden");
+    if (ok) {
+        loginBox.classList.add("hidden");
+        dashboard.classList.remove("hidden");
+        loadFiles();
     } else {
-        msg.innerText = "❌ Invalid username or password";
+        msg.innerText = "❌ Invalid login";
     }
+}
+
+/* ===== FILE STORAGE ===== */
+function getFiles() {
+    return JSON.parse(localStorage.getItem("files") || "[]");
+}
+
+function saveFiles(files) {
+    localStorage.setItem("files", JSON.stringify(files));
+}
+
+/* ===== ADD FILE ===== */
+function addFile() {
+    const name = fileName.value.trim();
+    const link = fileLink.value.trim();
+    if (!name || !link) return;
+
+    const files = getFiles();
+    files.push({ name, link });
+    saveFiles(files);
+
+    fileName.value = "";
+    fileLink.value = "";
+    loadFiles();
+}
+
+/* ===== LOAD FILES ===== */
+function loadFiles() {
+    const list = document.getElementById("fileList");
+    list.innerHTML = "";
+
+    getFiles().forEach((f, i) => {
+        const div = document.createElement("div");
+        div.className = "file";
+        div.innerHTML = `
+            <span>${f.name}</span>
+            <div>
+                <a href="${f.link}" target="_blank">
+                    <button>Download</button>
+                </a>
+                <button onclick="deleteFile(${i})">❌</button>
+            </div>
+        `;
+        list.appendChild(div);
+    });
+}
+
+/* ===== DELETE FILE ===== */
+function deleteFile(i) {
+    const files = getFiles();
+    files.splice(i, 1);
+    saveFiles(files);
+    loadFiles();
 }
 </script>
 
