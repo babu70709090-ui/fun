@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Private Cloud Login</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+body {
+    margin: 0;
+    background: #0b0f14;
+    color: #00ffcc;
+    font-family: Consolas, monospace;
+}
+
+.container {
+    max-width: 800px;
+    margin: auto;
+    padding: 20px;
+}
+
+h1 {
+    text-align: center;
+}
+
+.box {
+    background: #111822;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 0 20px rgba(0,255,204,0.2);
+}
+
+input {
+    width: 100%;
+    padding: 12px;
+    margin-top: 10px;
+    background: #0b0f14;
+    border: 1px solid #00ffcc;
+    color: #00ffcc;
+    border-radius: 5px;
+}
+
+button {
+    margin-top: 15px;
+    padding: 12px;
+    width: 100%;
+    background: #00ffcc;
+    color: #000;
+    border: none;
+    font-weight: bold;
+    cursor: pointer;
+    border-radius: 5px;
+}
+
+button:hover {
+    background: #00ddb3;
+}
+
+.hidden {
+    display: none;
+}
+
+.file {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px solid #1f2a36;
+}
+</style>
+</head>
+
+<body>
+<div class="container">
+
+<h1>🔐 PRIVATE CLOUD</h1>
+
+<!-- LOGIN BOX -->
+<div class="box" id="loginBox">
+    <p>Username</p>
+    <input type="text" id="username">
+
+    <p>Password</p>
+    <input type="password" id="password">
+
+    <button onclick="login()">LOGIN</button>
+    <p id="msg"></p>
+</div>
+
+<!-- FILE LIST -->
+<div class="box hidden" id="filesBox">
+    <h2>📁 Files</h2>
+
+    <div class="file">
+        <span>Linux_ISO.zip</span>
+        <a href="YOUR_LINK_HERE" target="_blank">
+            <button>Download</button>
+        </a>
+    </div>
+
+    <div class="file">
+        <span>Backup_2024.rar</span>
+        <a href="YOUR_LINK_HERE" target="_blank">
+            <button>Download</button>
+        </a>
+    </div>
+
+    <div class="file">
+        <span>Private_Docs.pdf</span>
+        <a href="YOUR_LINK_HERE" target="_blank">
+            <button>Download</button>
+        </a>
+    </div>
+</div>
+
+</div>
+
+<script>
+// 👇 ADD / CHANGE USERS HERE
+const USERS = [
+    { username: "admin", password: "1234" },
+    { username: "akbar", password: "pass123" }
+];
+
+function login() {
+    const u = document.getElementById("username").value;
+    const p = document.getElementById("password").value;
+    const msg = document.getElementById("msg");
+
+    const found = USERS.find(user => user.username === u && user.password === p);
+
+    if (found) {
+        document.getElementById("loginBox").classList.add("hidden");
+        document.getElementById("filesBox").classList.remove("hidden");
+    } else {
+        msg.innerText = "❌ Invalid username or password";
+    }
+}
+</script>
+
+</body>
+</html>
