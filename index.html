@@ -1,173 +1,849 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>Private Cloud</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Private Cloud — File Dashboard</title>
 <style>
-body {
-    margin: 0;
-    background: #0b0f14;
-    color: #00ffcc;
-    font-family: Consolas, monospace;
-}
+  :root{
+    --bg:#071018; --panel:#0f1b24; --accent:#00ffcc; --muted:#6fbfb1; --card:#0b1620;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;
+    font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial;
+    background:linear-gradient(180deg,#041019 0%, #071018 100%);
+    color:var(--accent);
+    -webkit-font-smoothing:antialiased;
+  }
 
-.container {
-    max-width: 900px;
-    margin: auto;
-    padding: 20px;
-}
+  /* layout */
+  .app {
+    display:grid;
+    grid-template-columns: 64px 1fr 360px;
+    gap:18px;
+    padding:18px;
+    min-height:100vh;
+  }
 
-.box {
-    background: #111822;
-    padding: 20px;
-    border-radius: 8px;
-    margin-bottom: 20px;
-}
+  /* left vertical bar with hamburger */
+  .leftbar{
+    background:transparent;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    padding-top:12px;
+  }
+  .hambtn{
+    width:48px;height:48px;border-radius:10px;border:1px solid rgba(0,255,204,0.06);
+    background:linear-gradient(180deg,#071a1a,#062022);
+    display:flex;align-items:center;justify-content:center;cursor:pointer;
+    box-shadow:0 6px 18px rgba(0,0,0,0.6);
+  }
+  .hambtn svg{fill:var(--accent);opacity:0.95}
+  .left-actions{margin-top:14px;display:flex;flex-direction:column;gap:12px;align-items:center}
+  .icon-btn{width:46px;height:46px;border-radius:8px;background:var(--card);display:flex;align-items:center;justify-content:center;cursor:pointer;border:1px solid rgba(0,255,204,0.06)}
+  .icon-btn svg{width:22px;height:22px;fill:var(--accent)}
 
-input, button {
-    width: 100%;
-    padding: 12px;
-    margin-top: 10px;
-    background: #0b0f14;
-    border: 1px solid #00ffcc;
-    color: #00ffcc;
-    border-radius: 5px;
-}
+  /* top header in main content */
+  .header{
+    grid-column:2 / 4;
+    display:flex;align-items:center;justify-content:space-between;
+    gap:12px;margin-bottom:8px;
+  }
+  .brand{display:flex;align-items:center;gap:12px}
+  .brand h1{margin:0;font-size:18px;color:var(--accent)}
+  .user-bubble{background:var(--panel);padding:8px 12px;border-radius:999px;border:1px solid rgba(0,255,204,0.06);color:var(--muted)}
+  .breadcrumb{font-size:13px;color:rgba(0,255,204,0.8)}
+  .search{width:320px;padding:8px 12px;border-radius:8px;border:1px solid rgba(0,255,204,0.06);background:transparent;color:var(--accent)}
 
-button {
-    background: #00ffcc;
-    color: #000;
-    font-weight: bold;
-    cursor: pointer;
-}
+  /* main content */
+  .content{
+    background:linear-gradient(180deg,var(--panel),#08161b);
+    padding:18px;border-radius:12px;border:1px solid rgba(0,255,204,0.04);
+    overflow:auto;
+    min-height:520px;
+  }
 
-button:hover {
-    background: #00ddb3;
-}
+  .cols{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+  .tile{
+    background:rgba(255,255,255,0.02);padding:12px;border-radius:10px;border:1px solid rgba(0,255,204,0.03);
+    display:flex;flex-direction:column;gap:8px;min-height:80px;
+  }
+  .tile h3{margin:0;font-size:14px}
+  .tile small{color:rgba(0,255,204,0.6);font-size:12px}
 
-.hidden {
-    display: none;
-}
+  /* file row */
+  .file-row{display:flex;align-items:center;justify-content:space-between;padding:10px;border-radius:8px;background:rgba(0,0,0,0.15);border:1px solid rgba(0,255,204,0.03);margin-bottom:8px}
+  .file-left{display:flex;align-items:center;gap:12px}
+  .file-left .icon{width:46px;height:46px;border-radius:8px;background:rgba(0,255,204,0.04);display:flex;align-items:center;justify-content:center}
+  .file-actions{display:flex;gap:8px;align-items:center}
+  .btn{padding:8px 10px;border-radius:8px;border:none;background:var(--accent);color:#042426;font-weight:600;cursor:pointer}
+  .btn.ghost{background:transparent;border:1px solid rgba(0,255,204,0.06);color:var(--accent)}
+  .muted{color:rgba(0,255,204,0.6);font-size:13px}
 
-.file {
-    display: flex;
-    justify-content: space-between;
-    padding: 10px 0;
-    border-bottom: 1px solid #1f2a36;
-}
+  /* right panel (forms) */
+  .rightpanel{
+    background:linear-gradient(180deg,#06161a,#051419);
+    border-radius:12px;padding:16px;border:1px solid rgba(0,255,204,0.04);
+    height: calc(100vh - 56px - 36px);
+    overflow:auto;
+  }
+  .rightpanel h3{margin-top:0;color:var(--accent)}
+  label{display:block;color:var(--muted);font-size:13px;margin-top:10px}
+  input[type="text"], input[type="password"], textarea, select{
+    width:100%;padding:10px;border-radius:8px;border:1px solid rgba(0,255,204,0.06);background:transparent;color:var(--accent);
+    margin-top:6px;
+  }
+  textarea{min-height:100px}
+  .small{font-size:13px;color:rgba(0,255,204,0.6);margin-top:6px}
+
+  /* menu drawer */
+  .menu-drawer{position:fixed;left:80px;top:20px;background:rgba(0,0,0,0.35);backdrop-filter: blur(6px);border-radius:10px;padding:12px;border:1px solid rgba(0,255,204,0.06)}
+  .menu-drawer button{display:flex;align-items:center;gap:10px;padding:8px 12px;background:transparent;border:none;color:var(--accent);cursor:pointer;border-radius:8px}
+  .menu-drawer button:hover{background:rgba(255,255,255,0.02)}
+
+  /* breadcrumb small */
+  .crumb{display:flex;gap:8px;align-items:center;color:var(--muted)}
+  .crumb a{color:var(--accent);text-decoration:none;cursor:pointer}
+  .right-actions{display:flex;gap:8px;align-items:center}
+
+  /* little helpers */
+  .note{font-size:13px;color:rgba(0,255,204,0.6);margin-top:8px}
+  .danger{background:transparent;border:1px solid rgba(255,60,60,0.12);color:#ff7f7f}
+
+  /* responsive */
+  @media(max-width:1000px){
+    .app{grid-template-columns:64px 1fr;grid-template-rows:auto 1fr 360px}
+    .header{grid-column:2 / 3}
+    .rightpanel{grid-column:1 / -1;grid-row:3}
+  }
 </style>
 </head>
-
 <body>
-<div class="container">
+<!--
+  index.html - Private Cloud (single-file)
+  - Save as index.html
+  - Default users are defined in JS below (admin and akbar). Change there if you want.
+  - Data stored in localStorage keys: pc_users, pc_items, pc_currentUser
+-->
 
-<h1>🔐 PRIVATE CLOUD</h1>
+<div class="app" id="app">
+  <!-- left narrow bar -->
+  <div class="leftbar">
+    <div class="hambtn" id="hambtn" title="Menu">
+      <!-- hamburger -->
+      <svg viewBox="0 0 24 24"><path d="M3 6h18v2H3zM3 11h18v2H3zM3 16h18v2H3z"/></svg>
+    </div>
 
-<!-- LOGIN -->
-<div class="box" id="loginBox">
-    <input type="text" id="username" placeholder="Username">
-    <input type="password" id="password" placeholder="Password">
-    <button onclick="login()">LOGIN</button>
-    <p id="msg"></p>
+    <div style="height:18px"></div>
+
+    <div class="left-actions" id="leftIcons">
+      <div class="icon-btn" id="homeBtn" title="Home" data-action="home"><svg viewBox="0 0 24 24"><path d="M12 3l9 8h-3v8h-12v-8h-3z"/></svg></div>
+      <div class="icon-btn" id="addBtn" title="Add Link" data-action="openAdd"><svg viewBox="0 0 24 24"><path d="M13 11h8v2h-8v8h-2v-8h-8v-2h8v-8h2z"/></svg></div>
+      <div class="icon-btn" id="folderBtn" title="Create Folder" data-action="openCreateFolder"><svg viewBox="0 0 24 24"><path d="M10 4l2 2h8v12h-20v-14h10z"/></svg></div>
+      <div class="icon-btn" id="usersBtn" title="Edit Users" data-action="openUsers"><svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5s-3 1.34-3 3 1.34 3 3 3zM8 11c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.67 0-8 1.34-8 4v3h14v-3c0-2.66-5.33-4-6-4zm8 0c-.29 0-.62.02-.97.05 1.16.84 2.97 1.66 3.97 2.36v1.59h4v-3c0-2.66-5.33-4-6-4z"/></svg></div>
+      <div class="icon-btn" id="settingsBtn" title="Change Password" data-action="openChangePass"><svg viewBox="0 0 24 24"><path d="M12 8a4 4 0 100 8 4 4 0 000-8zm9 3v2h-2.1c-.19.72-.5 1.39-.9 2.02l1.5 1.5-1.4 1.4-1.5-1.5c-.63.4-1.3.71-2.02.9V21h-2v-2.1c-.72-.19-1.39-.5-2.02-.9l-1.5 1.5-1.4-1.4 1.5-1.5c-.4-.63-.71-1.3-.9-2.02H3v-2h2.1c.19-.72.5-1.39.9-2.02L4.5 8.98 5.9 7.58l1.5 1.5c.63-.4 1.3-.71 2.02-.9V5h2v2.1c.72.19 1.39.5 2.02.9l1.5-1.5 1.4 1.4-1.5 1.5c.4.63.71 1.3.9 2.02H21z"/></svg></div>
+    </div>
+  </div>
+
+  <!-- header and main content -->
+  <div style="grid-column:2 / 3">
+    <div class="header">
+      <div class="brand">
+        <h1>Private Cloud — Dashboard</h1>
+        <div class="crumb" id="breadcrumb">Home</div>
+      </div>
+
+      <div style="display:flex;gap:12px;align-items:center">
+        <input class="search" id="search" placeholder="Search files or folders..." />
+        <div class="user-bubble" id="userBubble">Not logged</div>
+      </div>
+    </div>
+
+    <div class="content" id="contentArea">
+      <!-- Folder / File area -->
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+        <div>
+          <strong class="muted" id="viewTitle">Folders</strong>
+          <div class="note">Click folder to open. Click file download to open link.</div>
+        </div>
+        <div class="right-actions">
+          <button class="btn ghost" id="refreshBtn">Refresh</button>
+          <button class="btn" id="newRootFolderBtn">New Folder (root)</button>
+        </div>
+      </div>
+
+      <div id="listArea"></div>
+
+      <div style="margin-top:18px;color:rgba(0,255,204,0.5);font-size:13px">
+        <em>Tip:</em> Use the left menu to add links, create folders, manage users, or change your password.
+      </div>
+    </div>
+  </div>
+
+  <!-- right-side panel -->
+  <div class="rightpanel" id="rightPanel">
+    <h3 id="panelTitle">Welcome</h3>
+    <div id="panelContent">
+      <p class="small">Please login to start. Default admin: <strong>admin / 1234</strong>. Regular: <strong>akbar / pass123</strong>.</p>
+
+      <div id="loginFormArea">
+        <label>Username</label>
+        <input type="text" id="loginUser" placeholder="username">
+        <label>Password</label>
+        <input type="password" id="loginPass" placeholder="password">
+        <div style="margin-top:12px;display:flex;gap:8px">
+          <button class="btn" id="loginBtn">Login</button>
+          <button class="btn ghost" id="guestBtn">Continue as Guest (view only)</button>
+        </div>
+        <p class="note">Guest cannot add/edit/delete. To manage, login as admin.</p>
+      </div>
+    </div>
+  </div>
 </div>
 
-<!-- DASHBOARD -->
-<div class="hidden" id="dashboard">
-
-<!-- ADD FILE -->
-<div class="box">
-    <h3>➕ Add File (Link)</h3>
-    <input type="text" id="fileName" placeholder="File name (example.zip)">
-    <input type="text" id="fileLink" placeholder="Paste Drive / TeraBox link">
-    <button onclick="addFile()">ADD FILE</button>
-</div>
-
-<!-- FILE LIST -->
-<div class="box">
-    <h3>📁 Files</h3>
-    <div id="fileList"></div>
-</div>
-
-</div>
+<!-- Menu popover (hidden initially) -->
+<div id="menuDrawer" class="menu-drawer" style="display:none">
+  <button data-action="openAdd"><svg viewBox="0 0 24 24" style="width:18px;height:18px"><path d="M13 11h8v2h-8v8h-2v-8h-8v-2h8v-8h2z"/></svg> Add Link</button>
+  <button data-action="openCreateFolder"><svg viewBox="0 0 24 24" style="width:18px;height:18px"><path d="M10 4l2 2h8v12h-20v-14h10z"/></svg> Create Folder</button>
+  <button data-action="openChangePass"><svg viewBox="0 0 24 24" style="width:18px;height:18px"><path d="M12 8a4 4 0 100 8 4 4 0 000-8z"/></svg> Change Password</button>
+  <button data-action="openUsers"><svg viewBox="0 0 24 24" style="width:18px;height:18px"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5s-3 1.34-3 3 1.34 3 3 3zM8 11c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5 5 6.34 5 8s1.34 3 3 3z"/></svg> Edit Users</button>
+  <button data-action="logout"><svg viewBox="0 0 24 24" style="width:18px;height:18px"><path d="M10 17l5-5-5-5v10zM4 5v14h2V5H4z"/></svg> Logout</button>
 </div>
 
 <script>
-/* ===== USERS ===== */
-const USERS = [
-    { username: "admin", password: "1234" },
-    { username: "akbar", password: "pass123" }
+/* -----------------------
+   Data model & persistence
+   ----------------------- */
+const STORAGE_USERS = "pc_users_v1";
+const STORAGE_ITEMS = "pc_items_v1"; // files + folders
+const STORAGE_CURRENT = "pc_current_v1";
+
+/* default data: two users (admin and normal) and a sample folder/file */
+const DEFAULT_USERS = [
+  { id: uid(), username: "admin", password: "1234", isAdmin: true },
+  { id: uid(), username: "akbar", password: "pass123", isAdmin: false }
 ];
 
-/* ===== LOGIN ===== */
-function login() {
-    const u = username.value;
-    const p = password.value;
-    const ok = USERS.find(x => x.username === u && x.password === p);
+const DEFAULT_ITEMS = [
+  // sample folders and files
+  { id: iid(), name: "Movies", type: "folder", parent: null, ownerId: null, created: Date.now() },
+  { id: iid(), name: "Docs", type: "folder", parent: null, ownerId: null, created: Date.now() },
+  // a sample file in Movies (owner null -> system)
+  { id: iid(), name: "SampleVideo.zip", type: "file", parent: null, link: "https://example.com/sample.zip", ownerId: null, created: Date.now() }
+];
 
-    if (ok) {
-        loginBox.classList.add("hidden");
-        dashboard.classList.remove("hidden");
-        loadFiles();
-    } else {
-        msg.innerText = "❌ Invalid login";
-    }
+function uid(){ return "u_"+Math.random().toString(36).slice(2,10); }
+function iid(){ return "i_"+Math.random().toString(36).slice(2,10); }
+
+/* load or init */
+function loadUsers(){
+  const raw = localStorage.getItem(STORAGE_USERS);
+  if(!raw){
+    localStorage.setItem(STORAGE_USERS, JSON.stringify(DEFAULT_USERS));
+    return DEFAULT_USERS.slice();
+  }
+  try { return JSON.parse(raw); } catch(e){ return DEFAULT_USERS.slice(); }
+}
+function saveUsers(users){ localStorage.setItem(STORAGE_USERS, JSON.stringify(users)); }
+
+function loadItems(){
+  const raw = localStorage.getItem(STORAGE_ITEMS);
+  if(!raw){
+    localStorage.setItem(STORAGE_ITEMS, JSON.stringify(DEFAULT_ITEMS));
+    return DEFAULT_ITEMS.slice();
+  }
+  try { return JSON.parse(raw); } catch(e){ return DEFAULT_ITEMS.slice(); }
+}
+function saveItems(items){ localStorage.setItem(STORAGE_ITEMS, JSON.stringify(items)); }
+
+function loadCurrent(){ const raw = localStorage.getItem(STORAGE_CURRENT); return raw ? JSON.parse(raw) : null; }
+function saveCurrent(u){ localStorage.setItem(STORAGE_CURRENT, JSON.stringify(u)); }
+function clearCurrent(){ localStorage.removeItem(STORAGE_CURRENT); }
+
+/* -----------------------
+   App state
+   ----------------------- */
+let USERS = loadUsers();
+let ITEMS = loadItems();
+let CURRENT = loadCurrent(); // object { id, username, isAdmin } or null
+let currentFolder = null; // parent id; null means root
+let searchQuery = "";
+
+/* -----------------------
+   UI elements
+   ----------------------- */
+const menuDrawer = document.getElementById("menuDrawer");
+const hambtn = document.getElementById("hambtn");
+const leftIcons = document.getElementById("leftIcons");
+const panelTitle = document.getElementById("panelTitle");
+const panelContent = document.getElementById("panelContent");
+const rightPanel = document.getElementById("rightPanel");
+const userBubble = document.getElementById("userBubble");
+const listArea = document.getElementById("listArea");
+const breadcrumb = document.getElementById("breadcrumb");
+const viewTitle = document.getElementById("viewTitle");
+const loginFormArea = document.getElementById("loginFormArea");
+
+document.getElementById("loginBtn").addEventListener("click", handleLogin);
+document.getElementById("guestBtn").addEventListener("click", ()=>{ CURRENT = {id:null, username:"Guest", isAdmin:false}; saveCurrent(CURRENT); renderAll(); openPanelWelcome(); });
+
+/* search */
+document.getElementById("search").addEventListener("input", (e)=>{ searchQuery = e.target.value.trim().toLowerCase(); renderList(); });
+
+/* menu interactions */
+hambtn.addEventListener("click", ()=> { menuDrawer.style.display = menuDrawer.style.display === "none" ? "block" : "none"; menuDrawer.style.left = "80px"; });
+menuDrawer.querySelectorAll("button").forEach(btn => btn.addEventListener("click", (ev)=>{ handleMenuAction(btn.dataset.action); menuDrawer.style.display = "none"; }));
+
+leftIcons.addEventListener("click", (ev)=>{
+  const target = ev.target.closest("[data-action]");
+  if(target) handleMenuAction(target.dataset.action);
+});
+
+/* other buttons */
+document.getElementById("refreshBtn").addEventListener("click", ()=>{ USERS = loadUsers(); ITEMS = loadItems(); renderAll(); });
+document.getElementById("newRootFolderBtn").addEventListener("click", ()=> openCreateFolderPanel(null));
+
+/* -----------------------
+   Helpers for permissions
+   ----------------------- */
+function isLogged(){ return !!CURRENT && CURRENT.username !== "Guest"; }
+function isAdmin(){ return CURRENT && CURRENT.isAdmin; }
+function currentUserId(){ return CURRENT ? CURRENT.id : null; }
+
+function canDelete(item){
+  if(!isLogged()) return false;
+  if(isAdmin()) return true;
+  // regular user can delete only their own items (ownerId equals their user id)
+  return item.ownerId && CURRENT && item.ownerId === CURRENT.id;
+}
+function canEdit(item){
+  if(!isLogged()) return false;
+  if(isAdmin()) return true;
+  return item.ownerId && CURRENT && item.ownerId === CURRENT.id;
 }
 
-/* ===== FILE STORAGE ===== */
-function getFiles() {
-    return JSON.parse(localStorage.getItem("files") || "[]");
+/* -----------------------
+   Render functions
+   ----------------------- */
+function renderAll(){
+  // sync state & render
+  USERS = loadUsers();
+  ITEMS = loadItems();
+  CURRENT = loadCurrent();
+  userBubble.innerText = CURRENT ? `${CURRENT.username}${CURRENT.isAdmin ? " (admin)" : ""}` : "Not logged";
+  renderPanelHeader();
+  renderBreadcrumb();
+  renderList();
 }
 
-function saveFiles(files) {
-    localStorage.setItem("files", JSON.stringify(files));
+function renderPanelHeader(){
+  panelTitle.innerText = CURRENT ? `Welcome, ${CURRENT.username}` : "Welcome";
 }
 
-/* ===== ADD FILE ===== */
-function addFile() {
-    const name = fileName.value.trim();
-    const link = fileLink.value.trim();
-    if (!name || !link) return;
-
-    const files = getFiles();
-    files.push({ name, link });
-    saveFiles(files);
-
-    fileName.value = "";
-    fileLink.value = "";
-    loadFiles();
+/* breadcrumb and folder view */
+function renderBreadcrumb(){
+  // create path from root to currentFolder
+  const path = [];
+  let node = currentFolder ? ITEMS.find(x=>x.id===currentFolder) : null;
+  while(node){
+    path.unshift(node);
+    node = node.parent ? ITEMS.find(x=>x.id===node.parent) : null;
+  }
+  // root
+  breadcrumb.innerHTML = `<a href="#" onclick="goRoot();return false;">Home</a>`;
+  path.forEach(p => {
+    breadcrumb.innerHTML += ` &nbsp;/&nbsp; <a href="#" onclick="openFolder('${p.id}');return false;">${escapeHtml(p.name)}</a>`;
+  });
 }
 
-/* ===== LOAD FILES ===== */
-function loadFiles() {
-    const list = document.getElementById("fileList");
-    list.innerHTML = "";
+/* render folders and files inside currentFolder */
+function renderList(){
+  // decide to show folders first, then files
+  const items = ITEMS.filter(it => it.parent === currentFolder);
+  let folders = items.filter(i=>i.type==="folder");
+  let files = items.filter(i=>i.type==="file");
 
-    getFiles().forEach((f, i) => {
-        const div = document.createElement("div");
-        div.className = "file";
-        div.innerHTML = `
-            <span>${f.name}</span>
-            <div>
-                <a href="${f.link}" target="_blank">
-                    <button>Download</button>
-                </a>
-                <button onclick="deleteFile(${i})">❌</button>
-            </div>
-        `;
-        list.appendChild(div);
+  // apply search if set
+  if(searchQuery){
+    const q = searchQuery;
+    folders = folders.filter(f => f.name.toLowerCase().includes(q));
+    files = files.filter(f => f.name.toLowerCase().includes(q));
+  }
+
+  // construct HTML
+  const container = document.createElement("div");
+
+  // Folders section
+  if(folders.length){
+    const ftitle = document.createElement("div");
+    ftitle.className = "muted"; ftitle.style.marginBottom="8px"; ftitle.innerText = `Folders (${folders.length})`;
+    container.appendChild(ftitle);
+    folders.forEach(f => {
+      const el = document.createElement("div");
+      el.className = "file-row";
+      el.innerHTML = `
+        <div class="file-left">
+          <div class="icon">📁</div>
+          <div>
+            <div style="font-weight:700">${escapeHtml(f.name)}</div>
+            <div class="muted">Folder • ${f.ownerId ? ownerName(f.ownerId) : "system"}</div>
+          </div>
+        </div>
+        <div class="file-actions">
+          <button class="btn ghost" onclick="openFolder('${f.id}')">Open</button>
+          ${canEdit(f) ? `<button class="btn" onclick="openEditFolder('${f.id}')">Edit</button>` : ""}
+          ${canDelete(f) ? `<button class="btn danger" onclick="deleteItem('${f.id}')">Delete</button>` : ""}
+        </div>
+      `;
+      container.appendChild(el);
     });
+  }
+
+  // Files section
+  const ftitle2 = document.createElement("div");
+  ftitle2.className = "muted"; ftitle2.style.marginTop="12px"; ftitle2.style.marginBottom="8px";
+  ftitle2.innerText = `Files (${files.length})`;
+  container.appendChild(ftitle2);
+
+  files.forEach(file => {
+    const el = document.createElement("div");
+    el.className = "file-row";
+    const owner = file.ownerId ? ownerName(file.ownerId) : "system";
+    el.innerHTML = `
+      <div class="file-left">
+        <div class="icon">📄</div>
+        <div>
+          <div style="font-weight:700">${escapeHtml(file.name)}</div>
+          <div class="muted">${file.link ? shortLink(file.link) : "no link"} • ${owner}</div>
+        </div>
+      </div>
+      <div class="file-actions">
+        <a href="${file.link || '#'}" target="_blank"><button class="btn" ${file.link?"":'disabled'}>Download</button></a>
+        ${canEdit(file) ? `<button class="btn ghost" onclick="openEditFile('${file.id}')">Edit</button>` : ""}
+        ${canDelete(file) ? `<button class="btn danger" onclick="deleteItem('${file.id}')">Delete</button>` : ""}
+      </div>
+    `;
+    container.appendChild(el);
+  });
+
+  // if nothing to show
+  if(folders.length===0 && files.length===0){
+    const empty = document.createElement("div");
+    empty.className = "muted"; empty.style.marginTop="12px";
+    empty.innerText = "No folders or files here. Use Add Link or Create Folder from the left menu.";
+    container.appendChild(empty);
+  }
+
+  // attach
+  listArea.innerHTML = "";
+  listArea.appendChild(container);
 }
 
-/* ===== DELETE FILE ===== */
-function deleteFile(i) {
-    const files = getFiles();
-    files.splice(i, 1);
-    saveFiles(files);
-    loadFiles();
+/* -----------------------
+   Panel actions
+   ----------------------- */
+function handleMenuAction(action){
+  if(action === "home") { currentFolder = null; renderBreadcrumb(); renderList(); openPanelWelcome(); return; }
+  if(action === "openAdd") { openAddLinkPanel(); return; }
+  if(action === "openCreateFolder") { openCreateFolderPanel(currentFolder); return; }
+  if(action === "openUsers") { openUsersPanel(); return; }
+  if(action === "openChangePass") { openChangePasswordPanel(); return; }
+  if(action === "logout") { performLogout(); return; }
 }
+
+/* open the "welcome" panel */
+function openPanelWelcome(){
+  panelTitle.innerText = CURRENT ? `Welcome, ${CURRENT.username}` : "Welcome";
+  panelContent.innerHTML = `
+    <p class="small">Use the left menu to manage files and folders. You are ${CURRENT ? (CURRENT.isAdmin ? "an <strong>admin</strong>" : "a regular user") : "not logged"}.</p>
+    <div style="margin-top:10px">
+      <small class="muted">Quick actions:</small>
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <button class="btn" onclick="openAddLinkPanel()">Add Link</button>
+        <button class="btn ghost" onclick="openCreateFolderPanel(currentFolder)">Create Folder</button>
+      </div>
+    </div>
+  `;
+}
+
+/* Add Link panel (right side) */
+function openAddLinkPanel(prefillParent){
+  if(!isLogged()){ alert("You must be logged in to add links."); return; }
+  panelTitle.innerText = "Add Link";
+  panelContent.innerHTML = `
+    <label>File name</label>
+    <input type="text" id="add_name" placeholder="example.zip (required)">
+    <label>Link (share link from Drive / TeraBox / Mega etc.)</label>
+    <input type="text" id="add_link" placeholder="https://... (required)">
+    <label>Parent folder</label>
+    <select id="add_parent">
+      <option value="">Root</option>
+    </select>
+    <label>Owner (optional)</label>
+    <select id="add_owner">
+      <option value="">(system)</option>
+    </select>
+    <div style="margin-top:12px;display:flex;gap:8px">
+      <button class="btn" id="addLinkBtn">Add</button>
+      <button class="btn ghost" onclick="openPanelWelcome()">Cancel</button>
+    </div>
+    <p class="small">Files are saved to your browser's localStorage and persist on this device. Others won't see them unless you share the exported data.</p>
+  `;
+  // fill parents
+  const sel = panelContent.querySelector("#add_parent");
+  ITEMS.filter(i=>i.type==="folder").forEach(f => {
+    const opt = document.createElement("option");
+    opt.value = f.id;
+    opt.innerText = f.name;
+    sel.appendChild(opt);
+  });
+  if(prefillParent) sel.value = prefillParent;
+
+  // fill owners
+  const ownerSel = panelContent.querySelector("#add_owner");
+  USERS.forEach(u => {
+    const o = document.createElement("option"); o.value = u.id; o.innerText = u.username; ownerSel.appendChild(o);
+  });
+
+  document.getElementById("addLinkBtn").addEventListener("click", ()=>{
+    const name = panelContent.querySelector("#add_name").value.trim();
+    const link = panelContent.querySelector("#add_link").value.trim();
+    const parent = panelContent.querySelector("#add_parent").value || null;
+    const ownerId = panelContent.querySelector("#add_owner").value || (CURRENT ? CURRENT.id : null);
+    if(!name || !link){ alert("Provide both name and link."); return; }
+    const newItem = { id:iid(), name, type:"file", parent, link, ownerId, created:Date.now() };
+    ITEMS.push(newItem); saveItems(ITEMS); renderList(); openPanelWelcome();
+  });
+}
+
+/* Create Folder panel */
+function openCreateFolderPanel(prefillParent){
+  if(!isLogged()){ alert("You must be logged in to create folders."); return; }
+  panelTitle.innerText = "Create Folder";
+  panelContent.innerHTML = `
+    <label>Folder name</label>
+    <input type="text" id="folder_name" placeholder="Folder name (required)">
+    <label>Parent folder</label>
+    <select id="folder_parent">
+      <option value="">Root</option>
+    </select>
+    <label>Owner (who owns this folder)</label>
+    <select id="folder_owner">
+      <option value="">(system)</option>
+    </select>
+    <div style="margin-top:12px;display:flex;gap:8px">
+      <button class="btn" id="createFolderBtn">Create</button>
+      <button class="btn ghost" onclick="openPanelWelcome()">Cancel</button>
+    </div>
+  `;
+  const sel = panelContent.querySelector("#folder_parent");
+  ITEMS.filter(i=>i.type==="folder").forEach(f => {
+    const opt = document.createElement("option"); opt.value = f.id; opt.innerText = f.name; sel.appendChild(opt);
+  });
+  if(prefillParent) sel.value = prefillParent;
+  const ownerSel = panelContent.querySelector("#folder_owner");
+  USERS.forEach(u => { const o = document.createElement("option"); o.value = u.id; o.innerText = u.username; ownerSel.appendChild(o); });
+
+  document.getElementById("createFolderBtn").addEventListener("click", ()=>{
+    const name = panelContent.querySelector("#folder_name").value.trim();
+    const parent = panelContent.querySelector("#folder_parent").value || null;
+    const ownerId = panelContent.querySelector("#folder_owner").value || (CURRENT ? CURRENT.id : null);
+    if(!name){ alert("Provide a folder name."); return; }
+    const newF = { id:iid(), name, type:"folder", parent, ownerId, created:Date.now() };
+    ITEMS.push(newF); saveItems(ITEMS); renderList(); openPanelWelcome();
+  });
+}
+
+/* Open a folder in main view */
+function openFolder(id){
+  currentFolder = id;
+  renderBreadcrumb();
+  renderList();
+}
+
+/* open edit file */
+function openEditFile(id){
+  const file = ITEMS.find(x=>x.id===id);
+  if(!file) return alert("Not found");
+  if(!canEdit(file)) return alert("You don't have permission to edit this file.");
+  panelTitle.innerText = "Edit File";
+  panelContent.innerHTML = `
+    <label>File name</label>
+    <input type="text" id="edit_name" value="${escapeAttr(file.name)}">
+    <label>Link</label>
+    <input type="text" id="edit_link" value="${escapeAttr(file.link||"")}">
+    <label>Move to (parent)</label>
+    <select id="edit_parent"><option value="">Root</option></select>
+    <label>Owner</label>
+    <select id="edit_owner"><option value="">(system)</option></select>
+    <div style="margin-top:12px;display:flex;gap:8px">
+      <button class="btn" id="saveFileBtn">Save</button>
+      <button class="btn ghost" onclick="openPanelWelcome()">Cancel</button>
+    </div>
+  `;
+  const sel = panelContent.querySelector("#edit_parent");
+  ITEMS.filter(i=>i.type==="folder").forEach(f => {
+    const opt = document.createElement("option"); opt.value = f.id; opt.innerText = f.name; sel.appendChild(opt);
+  });
+  sel.value = file.parent || "";
+  const ownerSel = panelContent.querySelector("#edit_owner");
+  USERS.forEach(u => { const o = document.createElement("option"); o.value = u.id; o.innerText = u.username; ownerSel.appendChild(o); });
+  ownerSel.value = file.ownerId || "";
+
+  panelContent.querySelector("#saveFileBtn").addEventListener("click", ()=>{
+    file.name = panelContent.querySelector("#edit_name").value.trim() || file.name;
+    file.link = panelContent.querySelector("#edit_link").value.trim() || file.link;
+    file.parent = panelContent.querySelector("#edit_parent").value || null;
+    file.ownerId = panelContent.querySelector("#edit_owner").value || null;
+    saveItems(ITEMS); renderList(); openPanelWelcome();
+  });
+}
+
+/* open edit folder */
+function openEditFolder(id){
+  const folder = ITEMS.find(x=>x.id===id);
+  if(!folder) return alert("Not found");
+  if(!canEdit(folder)) return alert("You don't have permission to edit this folder.");
+  panelTitle.innerText = "Edit Folder";
+  panelContent.innerHTML = `
+    <label>Folder name</label>
+    <input type="text" id="edit_folder_name" value="${escapeAttr(folder.name)}">
+    <label>Parent</label>
+    <select id="edit_folder_parent"><option value="">Root</option></select>
+    <label>Owner</label>
+    <select id="edit_folder_owner"><option value="">(system)</option></select>
+    <div style="margin-top:12px;display:flex;gap:8px">
+      <button class="btn" id="saveFolderBtn">Save</button>
+      <button class="btn ghost" onclick="openPanelWelcome()">Cancel</button>
+    </div>
+    <p class="small">Note: Moving a folder won't move its children automatically in this demo. Be careful.</p>
+  `;
+  const sel = panelContent.querySelector("#edit_folder_parent");
+  ITEMS.filter(i=>i.type==="folder" && i.id !== folder.id).forEach(f => {
+    const opt = document.createElement("option"); opt.value = f.id; opt.innerText = f.name; sel.appendChild(opt);
+  });
+  sel.value = folder.parent || "";
+  const ownerSel = panelContent.querySelector("#edit_folder_owner");
+  USERS.forEach(u => { const o = document.createElement("option"); o.value = u.id; o.innerText = u.username; ownerSel.appendChild(o); });
+  ownerSel.value = folder.ownerId || "";
+
+  panelContent.querySelector("#saveFolderBtn").addEventListener("click", ()=>{
+    folder.name = panelContent.querySelector("#edit_folder_name").value.trim() || folder.name;
+    folder.parent = panelContent.querySelector("#edit_folder_parent").value || null;
+    folder.ownerId = panelContent.querySelector("#edit_folder_owner").value || null;
+    saveItems(ITEMS); renderList(); openPanelWelcome();
+  });
+}
+
+/* Delete item (file or folder). If folder has children, prompt user */
+function deleteItem(id){
+  const item = ITEMS.find(x=>x.id===id);
+  if(!item) return;
+  if(!canDelete(item)) return alert("You don't have permission to delete this item.");
+  if(item.type==="folder"){
+    const children = ITEMS.filter(i=>i.parent === item.id);
+    if(children.length){
+      if(!confirm("This folder contains files/folders. Delete everything inside too?")) return;
+      // remove children recursively
+      const toRemove = collectDescendants(item.id).concat([item.id]);
+      ITEMS = ITEMS.filter(i => !toRemove.includes(i.id));
+    } else {
+      ITEMS = ITEMS.filter(i => i.id !== item.id);
+    }
+  } else {
+    ITEMS = ITEMS.filter(i => i.id !== item.id);
+  }
+  saveItems(ITEMS);
+  renderList();
+  openPanelWelcome();
+}
+
+function collectDescendants(folderId){
+  let found = [];
+  const direct = ITEMS.filter(i=>i.parent===folderId);
+  direct.forEach(d => { found.push(d.id); if(d.type==="folder"){ found = found.concat(collectDescendants(d.id)); } });
+  return found;
+}
+
+/* Users management panel (admin only) */
+function openUsersPanel(){
+  if(!isLogged() || !isAdmin()){
+    alert("Only admin users can manage users.");
+    return;
+  }
+  panelTitle.innerText = "Manage Users";
+  panelContent.innerHTML = `
+    <div id="usersList"></div>
+    <hr style="border:none;border-top:1px solid rgba(0,255,204,0.04);margin:12px 0">
+    <h4>Create New User</h4>
+    <label>Username</label><input type="text" id="new_user_name" placeholder="username">
+    <label>Password</label><input type="password" id="new_user_pass" placeholder="password">
+    <label>Is Admin?</label>
+    <select id="new_user_admin"><option value="0">No</option><option value="1">Yes</option></select>
+    <div style="margin-top:10px;display:flex;gap:8px"><button class="btn" id="createUserBtn">Create</button><button class="btn ghost" onclick="openPanelWelcome()">Cancel</button></div>
+    <p class="small">You (admin) can edit usernames/passwords and promote/demote users here. Be careful.</p>
+  `;
+  renderUsersList();
+  document.getElementById("createUserBtn").addEventListener("click", ()=>{
+    const name = panelContent.querySelector("#new_user_name").value.trim();
+    const pass = panelContent.querySelector("#new_user_pass").value.trim();
+    const admin = panelContent.querySelector("#new_user_admin").value === "1";
+    if(!name || !pass) return alert("Provide username and password");
+    if(USERS.find(u=>u.username===name)) return alert("Username exists");
+    const newUser = { id: uid(), username: name, password: pass, isAdmin: admin };
+    USERS.push(newUser); saveUsers(USERS); renderUsersList();
+  });
+}
+
+function renderUsersList(){
+  const container = panelContent.querySelector("#usersList");
+  container.innerHTML = "<h4>Existing Users</h4>";
+  USERS.forEach(u=>{
+    const div = document.createElement("div");
+    div.style.display="flex";div.style.alignItems="center";div.style.justifyContent="space-between";div.style.marginTop="8px";
+    div.innerHTML = `
+      <div>
+        <div style="font-weight:700">${escapeHtml(u.username)} ${u.isAdmin?'<span style="color:#ffd57f">[admin]</span>':''}</div>
+        <div class="muted" style="font-size:12px">id: ${u.id}</div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn ghost" onclick="openEditUser('${u.id}')">Edit</button>
+        ${u.id !== (CURRENT?CURRENT.id:null) ? `<button class="btn danger" onclick="deleteUser('${u.id}')">Delete</button>` : ''}
+      </div>
+    `;
+    container.appendChild(div);
+  });
+}
+
+function openEditUser(id){
+  const u = USERS.find(x=>x.id===id);
+  if(!u) return;
+  panelTitle.innerText = `Edit User — ${u.username}`;
+  panelContent.innerHTML = `
+    <label>Username</label><input type="text" id="edit_user_name" value="${escapeAttr(u.username)}">
+    <label>New password (leave blank to keep)</label><input type="password" id="edit_user_pass" placeholder="new password">
+    <label>Is Admin?</label>
+    <select id="edit_user_admin"><option value="0">No</option><option value="1">Yes</option></select>
+    <div style="margin-top:10px;display:flex;gap:8px">
+      <button class="btn" id="saveUserBtn">Save</button>
+      <button class="btn ghost" onclick="openUsersPanel()">Cancel</button>
+    </div>
+    <p class="small">Editing users directly changes localStorage. Admins can edit other accounts.</p>
+  `;
+  panelContent.querySelector("#edit_user_admin").value = u.isAdmin ? "1" : "0";
+  panelContent.querySelector("#saveUserBtn").addEventListener("click", ()=>{
+    const newName = panelContent.querySelector("#edit_user_name").value.trim();
+    const newPass = panelContent.querySelector("#edit_user_pass").value;
+    const newAdmin = panelContent.querySelector("#edit_user_admin").value === "1";
+    if(!newName) return alert("Username cannot be empty");
+    // avoid duplicate name
+    if(USERS.some(x=>x.username===newName && x.id!==u.id)) return alert("Username already exists");
+    u.username = newName;
+    if(newPass) u.password = newPass;
+    u.isAdmin = newAdmin;
+    saveUsers(USERS);
+    // if edited current user, update CURRENT username/isAdmin
+    if(CURRENT && CURRENT.id === u.id){
+      CURRENT.username = u.username; CURRENT.isAdmin = u.isAdmin; saveCurrent(CURRENT);
+    }
+    openUsersPanel();
+  });
+}
+
+function deleteUser(id){
+  if(!confirm("Delete this user? Their owned files will remain (owner becomes system).")) return;
+  // change ownerId of items to null
+  ITEMS.forEach(it => { if(it.ownerId === id) it.ownerId = null; });
+  USERS = USERS.filter(u=>u.id!==id);
+  saveUsers(USERS);
+  saveItems(ITEMS);
+  openUsersPanel();
+}
+
+/* change password panel (for current user) */
+function openChangePasswordPanel(){
+  if(!isLogged()){ alert("You must be logged in to change password."); return; }
+  panelTitle.innerText = "Change Password";
+  panelContent.innerHTML = `
+    <label>Current password</label><input type="password" id="curpass" placeholder="current password">
+    <label>New password</label><input type="password" id="newpass" placeholder="new password">
+    <label>Confirm new password</label><input type="password" id="newpass2" placeholder="confirm new password">
+    <div style="margin-top:12px;display:flex;gap:8px"><button class="btn" id="doChangePass">Change</button><button class="btn ghost" onclick="openPanelWelcome()">Cancel</button></div>
+    <p class="small">Your password is stored locally in the browser (not secure). This is for demo only.</p>
+  `;
+  document.getElementById("doChangePass").addEventListener("click", ()=>{
+    const cur = panelContent.querySelector("#curpass").value;
+    const n1 = panelContent.querySelector("#newpass").value;
+    const n2 = panelContent.querySelector("#newpass2").value;
+    const me = USERS.find(u=>u.id === CURRENT.id);
+    if(!me) return alert("User not found");
+    if(me.password !== cur) return alert("Current password is incorrect");
+    if(!n1 || n1 !== n2) return alert("New passwords do not match or empty");
+    me.password = n1; saveUsers(USERS);
+    alert("Password changed.");
+    openPanelWelcome();
+  });
+}
+
+/* login/logout */
+function handleLogin(){
+  const u = document.getElementById("loginUser").value.trim();
+  const p = document.getElementById("loginPass").value;
+  const user = USERS.find(x=>x.username===u && x.password===p);
+  if(!user) return alert("Invalid login");
+  CURRENT = { id: user.id, username: user.username, isAdmin: user.isAdmin };
+  saveCurrent(CURRENT);
+  renderAll();
+  openPanelWelcome();
+}
+
+function performLogout(){
+  CURRENT = null; clearCurrent(); renderAll(); panelTitle.innerText = "Logged out"; panelContent.innerHTML = `<p class="small">You are logged out. Use the login form to sign in.</p><div style="margin-top:12px"><label>Username</label><input id="loginUser2" type="text"><label>Password</label><input id="loginPass2" type="password"><div style="margin-top:10px"><button class="btn" onclick="quickLogin()">Login</button></div></div>`;
+  // wire quick login
+  function quickLogin(){
+    const u = document.getElementById("loginUser2").value.trim();
+    const p = document.getElementById("loginPass2").value;
+    const user = USERS.find(x=>x.username===u && x.password===p);
+    if(!user) return alert("Invalid login");
+    CURRENT = { id: user.id, username: user.username, isAdmin: user.isAdmin };
+    saveCurrent(CURRENT); renderAll(); openPanelWelcome();
+  }
+}
+
+/* Utility: short link display */
+function shortLink(l){
+  try {
+    const u = new URL(l);
+    return u.hostname + u.pathname.split('/').slice(-1)[0];
+  } catch(e){
+    return l.slice(0,40) + (l.length>40?"...":"");
+  }
+}
+
+/* owner name */
+function ownerName(id){
+  const u = USERS.find(x=>x.id===id);
+  return u ? u.username : "system";
+}
+
+/* helpers */
+function escapeHtml(s){ if(!s) return ""; return (""+s).replace(/[&<>"']/g, c=> ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function escapeAttr(s){ return escapeHtml(s).replace(/"/g,'&quot;'); }
+
+/* edit helpers exposed to html inline */
+window.openFolder = (id)=>{ openFolder(id); };
+window.openEditFile = (id)=>{ openEditFile(id); };
+window.openEditFolder = (id)=>{ openEditFolder(id); };
+window.deleteItem = (id)=>{ deleteItem(id); };
+window.openEditUser = (id)=>{ openEditUser(id); };
+window.deleteUser = (id)=>{ deleteUser(id); };
+
+/* init first render */
+renderAll();
+openPanelWelcome();
+
 </script>
-
 </body>
 </html>
